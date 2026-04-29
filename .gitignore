@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Environments
+venv/
+env/
+
+# Databases
+*.db
+
+# Python internals
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
