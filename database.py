@@ -1,5 +1,6 @@
 import sqlite3
 import pandas as pd
+from datetime import datetime, timedelta
 
 def init_db():
     conn = sqlite3.connect('kirana_store.db')
@@ -80,14 +81,26 @@ def get_dashboard_payload():
         recent_sales = pd.read_sql_query("SELECT item, amount, timestamp FROM sales ORDER BY id DESC LIMIT 10", conn).to_dict(orient="records")
         chat_logs = pd.read_sql_query("SELECT sender, message, timestamp FROM chat_logs ORDER BY id DESC LIMIT 50", conn).to_dict(orient="records")
 
-        # Daily Revenue Comparison (Last 7 Days)
-        daily_revenue = pd.read_sql_query("""
+        # 🔥 Daily Revenue Comparison (Forced Zero Filling for Chart.js) 🔥
+        raw_revenue = pd.read_sql_query("""
             SELECT date(timestamp) as date, SUM(amount) as total 
             FROM sales 
             WHERE timestamp >= date('now', '-7 days')
             GROUP BY date(timestamp)
-            ORDER BY date(timestamp) ASC
         """, conn).to_dict(orient="records")
+        
+        # Convert DB results into a quick dictionary
+        revenue_dict = {row['date']: row['total'] for row in raw_revenue}
+        
+        # Build a perfect 7-day array, filling missing days with 0
+        daily_revenue = []
+        today = datetime.now()
+        for i in range(6, -1, -1):
+            target_date = (today - timedelta(days=i)).strftime('%Y-%m-%d')
+            daily_revenue.append({
+                "date": target_date[-5:], # Keep it clean like "04-30"
+                "total": revenue_dict.get(target_date, 0)
+            })
 
         # Popular Items Analysis
         all_sales_text = pd.read_sql_query("SELECT item FROM sales", conn)
@@ -100,7 +113,7 @@ def get_dashboard_payload():
         
         popular_items = sorted([{"name": k, "count": v} for k, v in item_counts.items()], key=lambda x: x['count'], reverse=True)[:5]
 
-        # 🔥 NEW: BUSINESS HEALTH REPORT METRICS 🔥
+        # BUSINESS HEALTH REPORT METRICS 
         c = conn.cursor()
         c.execute("SELECT COUNT(id), AVG(amount) FROM sales WHERE date(timestamp) = date('now', 'localtime')")
         sales_stats = c.fetchone()
@@ -126,7 +139,7 @@ def get_dashboard_payload():
             "chat_logs": chat_logs,
             "daily_revenue": daily_revenue,
             "popular_items": popular_items,
-            "health": health_report # Added to payload
+            "health": health_report
         }
     finally:
         conn.close()
