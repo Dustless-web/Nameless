@@ -152,6 +152,6 @@ To see Basanti in action, send these exact phrases to your Telegram Bot:
 
 ---
 <div align="center">
-  <i>Built with intense focus and excessive caffeine for [Insert Hackathon Name].</i>
+  <i>Built with intense focus and excessive caffeine for CODE CARNAGE 2.0.</i>
 </div>
 ```
