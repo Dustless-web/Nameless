@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basanti Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Space Mono', monospace; background-color: #faf9f6; }
+        .brutal-card { border: 4px solid black; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); }
+        .brutal-btn { border: 4px solid black; box-shadow: 4px 4px 0px 0px rgba(0,0,0,1); transition: 0.1s; cursor: pointer; }
+        .brutal-btn:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px 0px #000; }
+        .tab-active { background-color: black !important; color: white !important; }
+        .brutal-shadow-blue { box-shadow: 8px 8px 0px 0px #3b82f6; }
+        .brutal-shadow-yellow { box-shadow: 8px 8px 0px 0px #ffde59; }
+    </style>
+</head>
+<body class="p-8">
+    
+    <div class="border-b-8 border-black pb-6 mb-8 flex flex-col gap-6">
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <h1 class="text-6xl font-black uppercase leading-none" style="text-shadow: 4px 4px 0px #ff2a75;">Basanti</h1>
+                <div class="flex items-center gap-2 bg-black text-[#03c988] px-3 py-1 font-bold text-sm uppercase whitespace-nowrap">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#03c988] opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-[#03c988]"></span>
+                    </span>
+                    Webhook Active
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4">
+                <button onclick="toggleHealthModal()" class="brutal-btn bg-[#03c988] text-black font-black px-6 py-2 uppercase">🏥 Health Vitals</button>
+                <button onclick="exportPDF()" class="brutal-btn bg-black text-[#ffde59] font-black px-6 py-2 uppercase hover:bg-white hover:text-black transition-colors">📄 PDF</button>
+                <button onclick="triggerNuke()" class="brutal-btn bg-[#ff2a75] text-white font-black px-6 py-2 uppercase">☢️ Nuke</button>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-4 mt-2">
+            <button onclick="switchTab('overview')" id="btn-overview" class="brutal-btn bg-white font-bold px-6 py-2 uppercase tab-active">Overview</button>
+            <button onclick="switchTab('inventory')" id="btn-inventory" class="brutal-btn bg-[#ffde59] font-bold px-6 py-2 uppercase">Inventory</button>
+            <button onclick="switchTab('analytics')" id="btn-analytics" class="brutal-btn bg-[#03c988] font-bold px-6 py-2 uppercase">Comparison</button>
+            <button onclick="switchTab('popular')" id="btn-popular" class="brutal-btn bg-[#ff2a75] text-white font-bold px-6 py-2 uppercase">Popularity</button>
+            <button onclick="switchTab('vault')" id="btn-vault" class="brutal-btn bg-[#3b82f6] text-white font-bold px-6 py-2 uppercase">Vault</button>
+        </div>
+    </div>
+
+    <div id="page-overview" class="page-content">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="flex flex-col gap-8">
+                <div class="brutal-card bg-[#ffde59] p-8">
+                    <p class="text-xl font-bold uppercase">Today's Revenue</p>
+                    <p class="text-6xl font-black">₹{{ data.revenue }}</p>
+                </div>
+                
+                <div class="brutal-card bg-black text-[#03c988] p-6 brutal-shadow-blue flex flex-col flex-grow">
+                    <h2 class="text-2xl font-black uppercase mb-4 border-b-4 border-[#03c988] pb-2">
+                        🧠 Oracle AI Advice
+                    </h2>
+                    
+                    {% set oracle_logs = data.chat_logs | selectattr("sender", "equalto", "Basanti Oracle") | list %}
+                    
+                    <p class="font-mono text-sm leading-relaxed mb-4 whitespace-pre-wrap">{% if oracle_logs %}{{ oracle_logs[0].message | replace('💡 *BASANTI STRATEGY BRIEF*\n\n', '') }}{% else %}Awaiting environmental and market data... 
+                    
+Text "/advice" to Basanti on Telegram to trigger strategic analysis.{% endif %}</p>
+                    
+                    <div class="mt-auto text-xs opacity-50 uppercase font-bold flex justify-between">
+                        <span>System Intelligence</span>
+                        <span>{% if oracle_logs %}Live{% else %}Standby{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="brutal-card bg-white p-6 overflow-y-auto max-h-[500px]">
+                <h2 class="text-2xl font-black uppercase mb-4 underline">Recent Logs</h2>
+                <table class="w-full text-left">
+                    <tr class="border-b-4 border-black">
+                        <th class="py-2">Order</th>
+                        <th class="py-2 text-right">Value</th>
+                    </tr>
+                    {% for sale in data.sales %}
+                    <tr class="border-b-2 border-black/10">
+                        <td class="py-2">{{ sale.item }}</td>
+                        <td class="py-1 font-bold text-right">₹{{ sale.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-inventory" class="page-content hidden">
+        <div class="brutal-card bg-white p-6 brutal-shadow-yellow overflow-y-auto max-h-[600px] mb-12">
+            <h2 class="text-3xl font-black uppercase mb-6 underline">Stock Terminal</h2>
+            <table class="w-full text-left border-collapse">
+                <tr class="border-b-4 border-black bg-gray-100">
+                    <th class="py-3 px-2 font-black uppercase">Item Name</th>
+                    <th class="py-3 px-2 font-black uppercase">Stock Level</th>
+                    <th class="py-3 px-2 font-black uppercase">Unit Price</th>
+                </tr>
+                {% for item in data.inventory %}
+                <tr class="border-b-2 border-gray-200 {% if item.quantity < 10 %}bg-[#ff2a75] text-white{% endif %}">
+                    <td class="py-2 px-2">{% if item.quantity < 10 %}⚠️ {% endif %}{{ item.item_name }}</td>
+                    <td class="py-2 px-2 font-bold">{{ item.quantity }}</td>
+                    <td class="py-2 px-2 font-bold">₹{{ item.price }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div id="page-analytics" class="page-content hidden">
+        <div class="brutal-card bg-white p-8">
+            <h2 class="text-3xl font-black uppercase mb-6 underline">7-Day Performance</h2>
+            <canvas id="revenueChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <div id="page-popular" class="page-content hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="brutal-card bg-white p-8">
+                <h2 class="text-3xl font-black uppercase mb-6 underline">Top Moving Items</h2>
+                <canvas id="popularChart"></canvas>
+            </div>
+            <div class="brutal-card bg-black text-white p-8">
+                <h2 class="text-3xl font-black uppercase mb-6 text-[#ffde59]">Leaderboard</h2>
+                {% for item in data.popular_items %}
+                <div class="flex justify-between border-b border-white/20 py-4">
+                    <span class="text-xl font-bold">{{ loop.index }}. {{ item.name }}</span>
+                    <span class="text-xl font-black text-[#03c988]">{{ item.count }} Sales</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div id="page-vault" class="page-content hidden">
+        <div class="brutal-card bg-white p-6 brutal-shadow-blue mb-12 overflow-y-auto max-h-[600px]">
+            <h2 class="text-3xl font-black uppercase mb-6 underline">Communication Audit Log</h2>
+            <div class="flex flex-col gap-6">
+                {% for log in data.chat_logs %}
+                    {% if log.sender == 'User' %}
+                    <div class="self-end bg-gray-100 border-4 border-black p-4 ml-12 shadow-[4px_4px_0px_0px_#000] max-w-[80%]">
+                        <p class="text-xs font-bold text-gray-500 mb-2 uppercase">{{ log.timestamp }} | Manager</p>
+                        <p class="font-bold whitespace-pre-wrap">{{ log.message }}</p>
+                    </div>
+                    {% else %}
+                    <div class="self-start bg-[#ffde59] border-4 border-black p-4 mr-12 shadow-[4px_4px_0px_0px_#000] max-w-[80%]">
+                        <p class="text-xs font-bold text-black mb-2 uppercase">{{ log.timestamp }} | {{ log.sender }}</p>
+                        <p class="font-bold whitespace-pre-wrap">{{ log.message }}</p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div id="health-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="brutal-card bg-white p-8 max-w-3xl w-full relative">
+            <button onclick="toggleHealthModal()" class="absolute top-4 right-4 text-4xl font-black hover:text-[#ff2a75]">&times;</button>
+            <h2 class="text-4xl font-black uppercase mb-8 underline">Business Diagnosis</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="border-4 border-black p-4 bg-gray-100 text-center">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">System Status</p>
+                    <p class="text-2xl font-black {% if data.health.status == 'CRITICAL' %}text-[#ff2a75]{% elif data.health.status == 'OPTIMAL' %}text-[#03c988]{% else %}text-[#ffde59]{% endif %}">
+                        {{ data.health.status }}
+                    </p>
+                </div>
+                <div class="border-4 border-black p-4 bg-gray-100 text-center">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">Orders Today</p>
+                    <p class="text-2xl font-black">{{ data.health.orders_today }}</p>
+                </div>
+                <div class="border-4 border-black p-4 bg-gray-100 text-center">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">Avg Order Value</p>
+                    <p class="text-2xl font-black">₹{{ data.health.aov }}</p>
+                </div>
+                <div class="border-4 border-black p-4 bg-gray-100 text-center">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">Risk Items</p>
+                    <p class="text-2xl font-black {% if data.health.low_stock_count > 0 %}text-[#ff2a75]{% endif %}">{{ data.health.low_stock_count }}</p>
+                </div>
+            </div>
+            
+            <div class="bg-black text-white p-6 border-4 border-[#ffde59]">
+                <p class="font-bold uppercase text-[#ffde59] mb-2">🤖 AI Strategy Brief:</p>
+                <p class="font-mono text-lg">
+                    {% if data.health.status == 'CRITICAL' %}
+                        WARNING BOSS. You have {{ data.health.low_stock_count }} items running critically low. This is a severe supply chain risk. Restock immediately to prevent revenue leakage.
+                    {% elif data.health.status == 'IDLE' %}
+                        Store is currently idle. No transactions logged today. Ensure storefront is open and the Telegram webhook is actively receiving messages.
+                    {% else %}
+                        Store is operating efficiently. Daily velocity is excellent with an Average Order Value of ₹{{ data.health.aov }}. Supply chain risk is currently low.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 w-full bg-[#ff2a75] text-white border-t-8 border-black font-bold uppercase py-2 overflow-hidden whitespace-nowrap z-40">
+        <marquee scrollamount="10">
+            ⚡ LIVE FEED: 
+            {% for sale in data.sales %}
+                [{{ sale.timestamp }}] SOLD {{ sale.item }} FOR ₹{{ sale.amount }} ••• 
+            {% endfor %}
+            SYSTEM NOMINAL ⚡
+        </marquee>
+    </div>
+
+    <script id="dashboard-data" type="application/json">{{ data | tojson | safe }}</script>
+
+    <script>
+        const data = JSON.parse(document.getElementById('dashboard-data').textContent);
+
+        function playCrunch() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            osc.start(); osc.stop(ctx.currentTime + 0.1);
+        }
+
+        // --- TAB LOGIC ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.brutal-btn').forEach(btn => btn.classList.remove('tab-active'));
+            document.getElementById(`page-${tabId}`).classList.remove('hidden');
+            
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if (activeBtn) activeBtn.classList.add('tab-active');
+            
+            sessionStorage.setItem('activeTab', tabId);
+        }
+        switchTab(sessionStorage.getItem('activeTab') || 'overview');
+
+        // --- HEALTH MODAL LOGIC ---
+        function toggleHealthModal() {
+            playCrunch();
+            const modal = document.getElementById('health-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // --- CHARTS ---
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: {
+                labels: data.daily_revenue.map(r => r.date),
+                datasets: [{
+                    label: 'Daily Revenue (₹)',
+                    data: data.daily_revenue.map(r => r.total),
+                    borderColor: 'black', borderWidth: 6, tension: 0.1, backgroundColor: '#ffde59', fill: true
+                }]
+            },
+            options: { animation: false, scales: { y: { beginAtZero: true } } }
+        });
+
+        new Chart(document.getElementById('popularChart'), {
+            type: 'doughnut',
+            data: {
+                labels: data.popular_items.map(i => i.name),
+                datasets: [{
+                    data: data.popular_items.map(i => i.count),
+                    backgroundColor: ['#ff2a75', '#03c988', '#ffde59', '#3b82f6', '#000'],
+                    borderWidth: 4, borderColor: 'black'
+                }]
+            },
+            options: { animation: false }
+        });
+
+        // --- PDF EXPORT LOGIC ---
+        async function exportPDF() {
+            playCrunch();
+            try {
+                const response = await fetch('/api/sales/all');
+                const jsonResponse = await response.json();
+                
+                if (jsonResponse.status !== "success" || jsonResponse.data.length === 0) {
+                    alert("No sales data available to export!");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(22);
+                doc.text("Basanti: Official Sales Report", 14, 20);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text("Generated on: " + new Date().toLocaleString(), 14, 30);
+
+                const tableData = jsonResponse.data.map(sale => [
+                    sale.timestamp, 
+                    sale.item, 
+                    "Rs. " + parseFloat(sale.amount).toFixed(2)
+                ]);
+
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Date / Time', 'Items Sold', 'Amount (Rs)']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [245, 245, 245] },
+                    styles: { font: 'helvetica', fontSize: 10 }
+                });
+
+                doc.save("Basanti_Total_Sales_Report.pdf");
+            } catch (error) {
+                console.error("PDF Generation failed:", error);
+                alert("Failed to generate PDF. Check the console.");
+            }
+        }
+
+        // --- NUKE LOGIC ---
+        async function triggerNuke() {
+            playCrunch();
+            if(confirm("💥 Wipe everything?")) {
+                await fetch('/api/nuke', { method: 'POST' });
+                window.location.reload();
+            }
+        }
+
+        // Demo Hotkey
+        document.addEventListener('keydown', async function(e) {
+            if (e.shiftKey && e.key === 'D') {
+                playCrunch();
+                document.querySelector('.text-6xl.font-black').innerText = "HACKING...";
+                alert("🤫 Demo Hack: Use your telegram bot to log a massive fake sale now!");
+            }
+        });
+
+        // --- AUTO REFRESH ---
+        setTimeout(() => window.location.reload(), 15000);
+    </script>
+</body>
+</html>
