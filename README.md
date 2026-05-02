@@ -93,8 +93,8 @@ Basanti operates on a decoupled, event-driven architecture that separates the co
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/yourusername/basanti-terminal.git](https://github.com/yourusername/basanti-terminal.git)
-cd basanti-terminal
+git clone [https://github.com/yourusername/basanti.git](https://github.com/Dustless-web/basanti.git)
+cd basanti
 ```
 
 ### 2. Install Dependencies
